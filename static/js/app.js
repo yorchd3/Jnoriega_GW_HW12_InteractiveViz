@@ -6,7 +6,7 @@
 d3.json("samples.json").then(function(data) {
     // Get names from the json
     var sampleNames = data.names;
-    console.log(sampleNames);
+    // console.log(sampleNames);
 
     // Append each name in the HTML under "Test Subject ID"
     sampleNames.forEach(function(name){
@@ -14,8 +14,15 @@ d3.json("samples.json").then(function(data) {
     })
 })
 
-// 
-//Instantiate optionChanged to affect Demographic Info and Charts 
+
+// Instantiate contructor functions with new sample name request
+function optionChanged(newSample) {
+    chartsConstructor(newSample);
+    metadataConstructor(newSample);
+}
+
+
+//Construct Demographic Info Function
 function metadataConstructor(val) {
     d3.json("samples.json").then(function(data) {
                 
@@ -33,47 +40,66 @@ function metadataConstructor(val) {
             row.text(`${key}: ${value}`);
         })
     })
-
-    
-
 }
 
-
-  function chartsConstructor(x) {
-  
+// Construct Charts Function
+function chartsConstructor(x) {
     d3.json("samples.json").then(function(data) {
         var index = data.names.indexOf(x);
+        console.log(data.samples[index].sample_values);
+        
+        // Data for the Charts
+        var otu_id = data.samples[index].otu_ids;
+        var topOtu = otu_id.slice(0,10);
+        console.log(topOtu);
+        var values = data.samples[index].sample_values;
+        var topValues = values.slice(0,10);
+        console.log(topValues);
+        var labels = data.samples[index].otu_labels;
 
-        // @TODO: Build a Bubble Chart using the sample data
-        var x_values = data.samples[index].otu_ids;
-        var y_values = data.samples[index].sample_values;
-        var m_size = data.samples[index].sample_values;
-        var m_colors = data.samples[index].otu_ids; 
-        var t_values = data.samples[index].otu_labels;
-    
+         // #1: Bubble Chart    
         var trace1 = {
-            x: x_values,
-            y: y_values,
-            text: t_values,
+            x: otu_id,
+            y: values,
+            text: labels,
             mode: 'markers',
             marker: {
-            color: m_colors,
-            size: m_size
+            color: otu_id,
+            size: values
             } 
         };
         
         var data = [trace1];
-    
+
         var layout = {
             xaxis: { title: "OTU ID"},
         };
     
-        Plotly.newPlot('bubble', data, layout);
+        Plotly.newPlot("bubble", data, layout);
+
+        // #2 Bar Chart
+        var trace2 = {
+            type: 'bar',
+            x: topValues.reverse(),
+            y: topOtu.reverse().map(x => `OTU ${x}`),
+            orientation: 'h'
+        };
+        
+        var data2 = [trace2];
+    
+        var layout2 = {
+            title: {
+                text: "Bellybutton Biodiversity: Top 10 OTUS per person (sample)",
+                y: .85
+            },
+            xaxis: {
+                title: "Number of colonies per each OTU"
+            },
+            yaxis: {
+                title: "OTU id number"
+            }
+        };
+        Plotly.newPlot("bar", data2, layout2)
     })
 }
 
-function optionChanged(newSample) {
-    // Fetch new data each time a new sample is selected
-    chartsConstructor(newSample);
-    metadataConstructor(newSample);
-}
